@@ -25,8 +25,7 @@ export function useProfile(userId) {
   async function updateProfile(updates) {
     const { data, error } = await supabase
       .from("profiles")
-      .update(updates)
-      .eq("id", userId)
+      .upsert({ id: userId, ...updates }, { onConflict: "id" })
       .select()
       .single();
 

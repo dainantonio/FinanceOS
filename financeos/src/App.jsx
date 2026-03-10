@@ -35,9 +35,19 @@ export default function App() {
   const { addGoal } = useGoals(userId);
 
   async function handleOnboardingComplete(profileData, selectedGoals) {
-    await updateProfile(profileData);
-    for (const goal of selectedGoals) {
-      await addGoal({ name: goal.name, icon: goal.icon, target: goal.target, saved: 0 });
+    try {
+      const { error: profileError } = await updateProfile(profileData);
+      if (profileError) {
+        console.error("Profile update error:", profileError);
+        alert("Error saving profile: " + profileError.message);
+        return;
+      }
+      for (const goal of selectedGoals) {
+        await addGoal({ name: goal.name, icon: goal.icon, target: goal.target, saved: 0 });
+      }
+    } catch (err) {
+      console.error("Onboarding error:", err);
+      alert("Something went wrong: " + err.message);
     }
   }
 
