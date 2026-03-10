@@ -1,0 +1,979 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>FinanceOS — Your Financial Command Center</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --bg: #080C16;
+    --surface: #0F1623;
+    --card: #141D2E;
+    --border: #1C2840;
+    --accent: #00E5C3;
+    --gold: #F5C842;
+    --blue: #3B82F6;
+    --rose: #F43F5E;
+    --green: #10B981;
+    --text: #E8EDF5;
+    --sub: #7A8BA8;
+    --muted: #3A4A62;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    overflow-x: hidden;
+    cursor: none;
+  }
+
+  /* Custom cursor */
+  .cursor {
+    position: fixed;
+    width: 10px; height: 10px;
+    background: var(--accent);
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 9999;
+    transform: translate(-50%, -50%);
+    transition: transform 0.1s, width 0.2s, height 0.2s, opacity 0.2s;
+    mix-blend-mode: screen;
+  }
+  .cursor-ring {
+    position: fixed;
+    width: 36px; height: 36px;
+    border: 1px solid var(--accent);
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 9998;
+    transform: translate(-50%, -50%);
+    transition: transform 0.15s ease-out, width 0.3s, height 0.3s, opacity 0.3s;
+    opacity: 0.4;
+  }
+
+  /* Nav */
+  nav {
+    position: fixed; top: 0; left: 0; right: 0;
+    z-index: 100;
+    padding: 20px 40px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: var(--bg);
+    border-bottom: 1px solid transparent;
+    transition: border-color 0.3s, backdrop-filter 0.3s;
+  }
+  nav.scrolled {
+    border-color: var(--border);
+    backdrop-filter: blur(20px);
+    background: rgba(8,12,22,0.85);
+  }
+  .logo {
+    font-family: 'Syne', sans-serif;
+    font-size: 22px;
+    font-weight: 800;
+    color: var(--text);
+    letter-spacing: -0.03em;
+  }
+  .logo span { color: var(--accent); }
+  .nav-links {
+    display: flex;
+    gap: 32px;
+    align-items: center;
+  }
+  .nav-links a {
+    color: var(--sub);
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 500;
+    transition: color 0.2s;
+  }
+  .nav-links a:hover { color: var(--text); }
+  .nav-cta {
+    background: var(--accent);
+    color: #000 !important;
+    padding: 10px 22px;
+    border-radius: 10px;
+    font-weight: 700 !important;
+    font-size: 13px !important;
+    transition: opacity 0.2s !important;
+  }
+  .nav-cta:hover { opacity: 0.85; }
+
+  /* Hero */
+  .hero {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 120px 24px 80px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  /* Animated grid background */
+  .grid-bg {
+    position: absolute;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(0,229,195,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,229,195,0.03) 1px, transparent 1px);
+    background-size: 60px 60px;
+    mask-image: radial-gradient(ellipse 80% 60% at 50% 0%, black 40%, transparent 100%);
+  }
+
+  /* Glow orbs */
+  .orb {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(80px);
+    pointer-events: none;
+  }
+  .orb-1 {
+    width: 500px; height: 500px;
+    background: rgba(0,229,195,0.06);
+    top: -100px; left: 50%;
+    transform: translateX(-50%);
+    animation: pulse 6s ease-in-out infinite;
+  }
+  .orb-2 {
+    width: 300px; height: 300px;
+    background: rgba(59,130,246,0.05);
+    top: 200px; right: -100px;
+    animation: pulse 8s ease-in-out infinite reverse;
+  }
+  .orb-3 {
+    width: 250px; height: 250px;
+    background: rgba(245,200,66,0.04);
+    bottom: 100px; left: -50px;
+    animation: pulse 7s ease-in-out infinite 2s;
+  }
+  @keyframes pulse {
+    0%, 100% { transform: scale(1) translateX(0); opacity: 0.6; }
+    50% { transform: scale(1.1) translateX(10px); opacity: 1; }
+  }
+
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(0,229,195,0.08);
+    border: 1px solid rgba(0,229,195,0.2);
+    border-radius: 99px;
+    padding: 8px 16px;
+    font-size: 12px;
+    color: var(--accent);
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    margin-bottom: 32px;
+    animation: fadeUp 0.8s ease both;
+  }
+  .badge-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--accent);
+    animation: blink 1.5s ease-in-out infinite;
+  }
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+  h1 {
+    font-family: 'Syne', sans-serif;
+    font-size: clamp(42px, 7vw, 88px);
+    font-weight: 800;
+    line-height: 1.0;
+    letter-spacing: -0.04em;
+    color: var(--text);
+    max-width: 900px;
+    margin-bottom: 24px;
+    animation: fadeUp 0.8s ease 0.1s both;
+  }
+  h1 .accent { color: var(--accent); }
+  h1 .gold { color: var(--gold); }
+
+  .hero-sub {
+    font-size: clamp(16px, 2vw, 20px);
+    color: var(--sub);
+    max-width: 560px;
+    line-height: 1.7;
+    margin-bottom: 48px;
+    font-weight: 300;
+    animation: fadeUp 0.8s ease 0.2s both;
+  }
+
+  /* Waitlist form */
+  .waitlist-form {
+    display: flex;
+    gap: 10px;
+    max-width: 460px;
+    width: 100%;
+    margin: 0 auto 20px;
+    animation: fadeUp 0.8s ease 0.3s both;
+  }
+  .waitlist-form input {
+    flex: 1;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 14px 18px;
+    color: var(--text);
+    font-size: 14px;
+    font-family: 'DM Sans', sans-serif;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .waitlist-form input:focus { border-color: var(--accent); }
+  .waitlist-form input::placeholder { color: var(--muted); }
+  .btn-primary {
+    background: var(--accent);
+    color: #000;
+    border: none;
+    border-radius: 12px;
+    padding: 14px 24px;
+    font-size: 14px;
+    font-weight: 700;
+    font-family: 'DM Sans', sans-serif;
+    cursor: none;
+    white-space: nowrap;
+    transition: opacity 0.2s, transform 0.15s;
+  }
+  .btn-primary:hover { opacity: 0.88; transform: translateY(-1px); }
+  .btn-primary:active { transform: translateY(0); }
+
+  .hero-note {
+    font-size: 12px;
+    color: var(--muted);
+    animation: fadeUp 0.8s ease 0.4s both;
+  }
+  .hero-note span { color: var(--accent); }
+
+  .success-msg {
+    display: none;
+    color: var(--accent);
+    font-size: 14px;
+    font-weight: 600;
+    padding: 14px 24px;
+    background: rgba(0,229,195,0.08);
+    border: 1px solid rgba(0,229,195,0.2);
+    border-radius: 12px;
+    max-width: 460px;
+    width: 100%;
+    text-align: center;
+    margin: 0 auto 20px;
+  }
+
+  /* Social proof */
+  .social-proof {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-top: 40px;
+    animation: fadeUp 0.8s ease 0.5s both;
+  }
+  .avatars {
+    display: flex;
+  }
+  .avatar {
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    border: 2px solid var(--bg);
+    margin-left: -8px;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--card);
+  }
+  .avatar:first-child { margin-left: 0; }
+  .social-text { font-size: 13px; color: var(--sub); }
+  .social-text strong { color: var(--text); }
+
+  /* Demo link */
+  .demo-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--sub);
+    text-decoration: none;
+    font-size: 13px;
+    font-weight: 500;
+    margin-top: 16px;
+    transition: color 0.2s;
+    animation: fadeUp 0.8s ease 0.6s both;
+  }
+  .demo-link:hover { color: var(--accent); }
+  .demo-link svg { transition: transform 0.2s; }
+  .demo-link:hover svg { transform: translateX(3px); }
+
+  /* App preview */
+  .preview-section {
+    padding: 40px 24px 100px;
+    display: flex;
+    justify-content: center;
+    position: relative;
+  }
+  .phone-frame {
+    width: 280px;
+    height: 560px;
+    background: var(--card);
+    border-radius: 40px;
+    border: 1px solid var(--border);
+    overflow: hidden;
+    box-shadow: 0 40px 100px rgba(0,0,0,0.6), 0 0 60px rgba(0,229,195,0.08);
+    position: relative;
+    animation: fadeUp 1s ease 0.3s both;
+  }
+  .phone-notch {
+    position: absolute;
+    top: 14px; left: 50%;
+    transform: translateX(-50%);
+    width: 80px; height: 22px;
+    background: var(--bg);
+    border-radius: 99px;
+    z-index: 10;
+  }
+  .phone-screen {
+    width: 100%; height: 100%;
+    padding: 50px 16px 16px;
+    overflow: hidden;
+    background: #080C16;
+  }
+  .ps-greeting { font-size: 10px; color: var(--sub); margin-bottom: 2px; }
+  .ps-name { font-family: 'Syne', sans-serif; font-size: 16px; font-weight: 800; color: var(--text); margin-bottom: 10px; }
+  .ps-networth-label { font-size: 8px; color: var(--sub); }
+  .ps-networth { font-family: 'Syne', sans-serif; font-size: 22px; font-weight: 800; color: var(--accent); margin-bottom: 12px; }
+  .ps-row { display: flex; gap: 10px; margin-bottom: 14px; }
+  .ps-stat { flex: 1; }
+  .ps-stat-label { font-size: 7px; color: var(--sub); }
+  .ps-stat-val { font-size: 11px; font-weight: 700; color: var(--text); }
+  .ps-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 10px;
+    margin-bottom: 8px;
+  }
+  .ps-card-title { font-size: 7px; color: var(--sub); text-transform: uppercase; letter-spacing: .06em; margin-bottom: 6px; }
+  .ps-insight { font-size: 8px; color: var(--text); line-height: 1.5; margin-bottom: 4px; }
+  .ps-bar-wrap { height: 3px; background: var(--border); border-radius: 99px; overflow: hidden; margin-top: 4px; }
+  .ps-bar { height: 100%; border-radius: 99px; }
+  .ps-goal { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+  .ps-goal-name { font-size: 8px; color: var(--text); }
+  .ps-goal-pct { font-size: 9px; font-weight: 700; }
+
+  /* Features */
+  .features {
+    padding: 100px 24px;
+    max-width: 1100px;
+    margin: 0 auto;
+  }
+  .section-label {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 16px;
+    text-align: center;
+  }
+  .section-title {
+    font-family: 'Syne', sans-serif;
+    font-size: clamp(28px, 4vw, 48px);
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    color: var(--text);
+    text-align: center;
+    margin-bottom: 16px;
+  }
+  .section-sub {
+    font-size: 16px;
+    color: var(--sub);
+    text-align: center;
+    max-width: 500px;
+    margin: 0 auto 64px;
+    line-height: 1.7;
+    font-weight: 300;
+  }
+  .features-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 16px;
+  }
+  .feature-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 28px;
+    transition: border-color 0.3s, transform 0.3s;
+    position: relative;
+    overflow: hidden;
+  }
+  .feature-card::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    transition: opacity 0.3s;
+    border-radius: 20px;
+  }
+  .feature-card:hover { transform: translateY(-4px); }
+  .feature-card:hover::before { opacity: 1; }
+  .fc-accent::before { background: radial-gradient(circle at top left, rgba(0,229,195,0.06), transparent 60%); }
+  .fc-accent:hover { border-color: rgba(0,229,195,0.3); }
+  .fc-gold::before { background: radial-gradient(circle at top left, rgba(245,200,66,0.06), transparent 60%); }
+  .fc-gold:hover { border-color: rgba(245,200,66,0.3); }
+  .fc-blue::before { background: radial-gradient(circle at top left, rgba(59,130,246,0.06), transparent 60%); }
+  .fc-blue:hover { border-color: rgba(59,130,246,0.3); }
+  .fc-rose::before { background: radial-gradient(circle at top left, rgba(244,63,94,0.06), transparent 60%); }
+  .fc-rose:hover { border-color: rgba(244,63,94,0.3); }
+  .fc-green::before { background: radial-gradient(circle at top left, rgba(16,185,129,0.06), transparent 60%); }
+  .fc-green:hover { border-color: rgba(16,185,129,0.3); }
+  .fc-purple::before { background: radial-gradient(circle at top left, rgba(139,92,246,0.06), transparent 60%); }
+  .fc-purple:hover { border-color: rgba(139,92,246,0.3); }
+
+  .feature-icon {
+    font-size: 28px;
+    margin-bottom: 16px;
+    display: block;
+  }
+  .feature-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 10px;
+  }
+  .feature-desc {
+    font-size: 14px;
+    color: var(--sub);
+    line-height: 1.7;
+    font-weight: 300;
+  }
+  .feature-tag {
+    display: inline-block;
+    margin-top: 14px;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 4px 10px;
+    border-radius: 99px;
+  }
+
+  /* Faith section */
+  .faith-section {
+    padding: 80px 24px;
+    max-width: 800px;
+    margin: 0 auto;
+    text-align: center;
+  }
+  .faith-card {
+    background: linear-gradient(135deg, #1A1500 0%, #100D00 100%);
+    border: 1px solid rgba(245,200,66,0.2);
+    border-radius: 24px;
+    padding: 48px 40px;
+    position: relative;
+    overflow: hidden;
+  }
+  .faith-card::before {
+    content: '';
+    position: absolute;
+    top: -60px; right: -60px;
+    width: 200px; height: 200px;
+    background: rgba(245,200,66,0.05);
+    border-radius: 50%;
+    filter: blur(40px);
+  }
+  .faith-cross {
+    font-size: 36px;
+    margin-bottom: 20px;
+    display: block;
+  }
+  .faith-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 28px;
+    font-weight: 800;
+    color: var(--gold);
+    margin-bottom: 16px;
+    letter-spacing: -0.02em;
+  }
+  .faith-desc {
+    font-size: 15px;
+    color: #A89060;
+    line-height: 1.8;
+    margin-bottom: 24px;
+    font-weight: 300;
+  }
+  .faith-verse {
+    background: rgba(245,200,66,0.06);
+    border: 1px solid rgba(245,200,66,0.15);
+    border-radius: 14px;
+    padding: 20px 24px;
+    font-size: 14px;
+    color: var(--gold);
+    font-style: italic;
+    line-height: 1.7;
+  }
+  .faith-verse cite {
+    display: block;
+    margin-top: 8px;
+    font-style: normal;
+    font-size: 12px;
+    color: #A89060;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+  }
+
+  /* Score section */
+  .score-section {
+    padding: 100px 24px;
+    max-width: 1000px;
+    margin: 0 auto;
+  }
+  .score-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 40px;
+    align-items: center;
+  }
+  @media (max-width: 700px) { .score-grid { grid-template-columns: 1fr; } }
+  .score-visual {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 24px;
+    padding: 32px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+  }
+  .score-number {
+    font-family: 'Syne', sans-serif;
+    font-size: 80px;
+    font-weight: 800;
+    color: var(--accent);
+    line-height: 1;
+    letter-spacing: -0.04em;
+    margin-bottom: 4px;
+  }
+  .score-label { font-size: 13px; color: var(--sub); margin-bottom: 24px; }
+  .score-bar-row { margin-bottom: 12px; }
+  .score-bar-header { display: flex; justify-content: space-between; margin-bottom: 5px; }
+  .score-bar-name { font-size: 12px; color: var(--sub); }
+  .score-bar-val { font-size: 12px; font-weight: 700; }
+  .score-bar-bg { height: 5px; background: var(--border); border-radius: 99px; overflow: hidden; }
+  .score-bar-fill { height: 100%; border-radius: 99px; transition: width 1s ease; }
+  .score-text h3 {
+    font-family: 'Syne', sans-serif;
+    font-size: 32px;
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    margin-bottom: 16px;
+    line-height: 1.2;
+  }
+  .score-text p {
+    font-size: 15px;
+    color: var(--sub);
+    line-height: 1.8;
+    font-weight: 300;
+    margin-bottom: 24px;
+  }
+  .score-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .score-chip {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 99px;
+    padding: 6px 14px;
+    font-size: 12px;
+    color: var(--sub);
+  }
+
+  /* CTA */
+  .cta-section {
+    padding: 100px 24px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+  .cta-glow {
+    position: absolute;
+    width: 600px; height: 300px;
+    background: radial-gradient(ellipse, rgba(0,229,195,0.07) 0%, transparent 70%);
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+  }
+  .cta-section h2 {
+    font-family: 'Syne', sans-serif;
+    font-size: clamp(32px, 5vw, 56px);
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    margin-bottom: 16px;
+    line-height: 1.1;
+  }
+  .cta-section p {
+    font-size: 16px;
+    color: var(--sub);
+    max-width: 440px;
+    margin: 0 auto 40px;
+    font-weight: 300;
+    line-height: 1.7;
+  }
+
+  /* Footer */
+  footer {
+    border-top: 1px solid var(--border);
+    padding: 40px 40px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 16px;
+  }
+  footer p { font-size: 13px; color: var(--muted); }
+  .footer-links { display: flex; gap: 24px; }
+  .footer-links a { font-size: 13px; color: var(--muted); text-decoration: none; transition: color 0.2s; }
+  .footer-links a:hover { color: var(--sub); }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* Scroll reveal */
+  .reveal {
+    opacity: 0;
+    transform: translateY(24px);
+    transition: opacity 0.7s ease, transform 0.7s ease;
+  }
+  .reveal.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  /* Mobile nav */
+  @media (max-width: 600px) {
+    nav { padding: 16px 20px; }
+    .nav-links { display: none; }
+    .waitlist-form { flex-direction: column; }
+    .btn-primary { width: 100%; }
+    footer { flex-direction: column; text-align: center; }
+  }
+</style>
+</head>
+<body>
+
+<div class="cursor" id="cursor"></div>
+<div class="cursor-ring" id="cursorRing"></div>
+
+<!-- Nav -->
+<nav id="nav">
+  <div class="logo">Finance<span>OS</span>.</div>
+  <div class="nav-links">
+    <a href="#features">Features</a>
+    <a href="#score">Score</a>
+    <a href="#faith">Faith Mode</a>
+    <a href="https://financeos-gamma.vercel.app/financeos" class="nav-cta">Try Demo →</a>
+  </div>
+</nav>
+
+<!-- Hero -->
+<section class="hero">
+  <div class="grid-bg"></div>
+  <div class="orb orb-1"></div>
+  <div class="orb orb-2"></div>
+  <div class="orb orb-3"></div>
+
+  <div class="badge">
+    <div class="badge-dot"></div>
+    NOW IN EARLY ACCESS
+  </div>
+
+  <h1>Your money.<br>Finally <span class="accent">under control.</span></h1>
+
+  <p class="hero-sub">
+    FinanceOS is an AI-powered financial command center that helps you spend wisely, save consistently, invest intelligently, and give generously.
+  </p>
+
+  <div class="waitlist-form" id="waitlistForm">
+    <input type="email" id="emailInput" placeholder="Enter your email address" />
+    <button class="btn-primary" onclick="joinWaitlist()">Join Waitlist</button>
+  </div>
+  <div class="success-msg" id="successMsg">
+    ✅ You're on the list! We'll be in touch soon.
+  </div>
+
+  <p class="hero-note">Free to join · No credit card · <span>150+ people already signed up</span></p>
+
+  <div class="social-proof">
+    <div class="avatars">
+      <div class="avatar">👨🏾</div>
+      <div class="avatar">👩🏼</div>
+      <div class="avatar">👨🏻</div>
+      <div class="avatar">👩🏽</div>
+      <div class="avatar">👨🏿</div>
+    </div>
+    <p class="social-text">Join <strong>150+ people</strong> taking control of their finances</p>
+  </div>
+
+  <a href="https://financeos-gamma.vercel.app/financeos" class="demo-link">
+    Explore the live demo
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+  </a>
+</section>
+
+<!-- App Preview -->
+<section class="preview-section">
+  <div style="position:relative;">
+    <!-- Glow behind phone -->
+    <div style="position:absolute;inset:-40px;background:radial-gradient(ellipse,rgba(0,229,195,0.08) 0%,transparent 70%);pointer-events:none;"></div>
+    <div class="phone-frame reveal">
+      <div class="phone-notch"></div>
+      <div class="phone-screen">
+        <div class="ps-greeting">Good morning,</div>
+        <div class="ps-name">Dain 👋</div>
+        <div class="ps-networth-label">Net Worth</div>
+        <div class="ps-networth">$47,820</div>
+        <div class="ps-row">
+          <div class="ps-stat"><div class="ps-stat-label">Cash</div><div class="ps-stat-val">$3,240</div></div>
+          <div class="ps-stat"><div class="ps-stat-label">Income</div><div class="ps-stat-val">$8,500/mo</div></div>
+        </div>
+        <div class="ps-card">
+          <div class="ps-card-title">🤖 AI Insights</div>
+          <div class="ps-insight">🔴 Food delivery up 31% this month. Cook 3 meals at home → save $140.</div>
+          <div class="ps-insight">🟡 Audible unused 40 days. Cancel → save $180/yr.</div>
+          <div class="ps-insight">🟢 Emergency fund on track for 6 months in 4 months!</div>
+        </div>
+        <div class="ps-card">
+          <div class="ps-card-title">Goals Progress</div>
+          <div class="ps-goal">
+            <div class="ps-goal-name">🛡️ Emergency Fund</div>
+            <div class="ps-goal-pct" style="color:#3B82F6">61%</div>
+          </div>
+          <div class="ps-bar-wrap"><div class="ps-bar" style="width:61%;background:#3B82F6"></div></div>
+          <div style="height:6px"></div>
+          <div class="ps-goal">
+            <div class="ps-goal-name">✈️ Vacation Fund</div>
+            <div class="ps-goal-pct" style="color:#F5C842">56%</div>
+          </div>
+          <div class="ps-bar-wrap"><div class="ps-bar" style="width:56%;background:#F5C842"></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Features -->
+<section class="features" id="features">
+  <div class="section-label">Everything you need</div>
+  <h2 class="section-title reveal">Built for how you<br>actually live</h2>
+  <p class="section-sub reveal">Seven powerful modules working together as one seamless financial operating system.</p>
+
+  <div class="features-grid">
+    <div class="feature-card fc-accent reveal">
+      <span class="feature-icon">🤖</span>
+      <div class="feature-title">AI Financial Coach</div>
+      <div class="feature-desc">Ask anything about your money. Get personalized advice powered by Gemini AI, trained on your actual financial data — not generic tips.</div>
+      <div class="feature-tag" style="background:rgba(0,229,195,0.1);color:var(--accent)">Powered by Gemini</div>
+    </div>
+    <div class="feature-card fc-rose reveal">
+      <span class="feature-icon">🔍</span>
+      <div class="feature-title">Financial Leak Detector</div>
+      <div class="feature-desc">AI scans your spending patterns daily and surfaces the exact habits costing you thousands per year — with clear action steps to fix them.</div>
+      <div class="feature-tag" style="background:rgba(244,63,94,0.1);color:var(--rose)">Saves avg. $8K/yr</div>
+    </div>
+    <div class="feature-card fc-blue reveal">
+      <span class="feature-icon">🎯</span>
+      <div class="feature-title">Goals Engine</div>
+      <div class="feature-desc">Set savings goals with real projections. Emergency fund, vacation, house down payment — see exactly when you'll get there and what it takes.</div>
+      <div class="feature-tag" style="background:rgba(59,130,246,0.1);color:var(--blue)">With ETAs</div>
+    </div>
+    <div class="feature-card fc-gold reveal">
+      <span class="feature-icon">📱</span>
+      <div class="feature-title">Subscription Intelligence</div>
+      <div class="feature-desc">Automatically detects every recurring charge. Flags unused subscriptions and calculates exactly how much you'd save by cancelling them.</div>
+      <div class="feature-tag" style="background:rgba(245,200,66,0.1);color:var(--gold)">Auto-detects</div>
+    </div>
+    <div class="feature-card fc-green reveal">
+      <span class="feature-icon">📈</span>
+      <div class="feature-title">Investment Snapshot</div>
+      <div class="feature-desc">Track stocks, ETFs, crypto, and retirement accounts in one view. Get AI-powered diversification tips and real-time portfolio performance.</div>
+      <div class="feature-tag" style="background:rgba(16,185,129,0.1);color:var(--green)">All assets</div>
+    </div>
+    <div class="feature-card fc-purple reveal">
+      <span class="feature-icon">🤲</span>
+      <div class="feature-title">Giving Tracker</div>
+      <div class="feature-desc">Track tithes, donations, and charitable giving. Set giving goals and see your generosity grow as a percentage of income over time.</div>
+      <div class="feature-tag" style="background:rgba(139,92,246,0.1);color:#8B5CF6">Tithe goals</div>
+    </div>
+  </div>
+</section>
+
+<!-- Faith Section -->
+<section id="faith" style="padding:0 24px 100px;">
+  <div class="faith-section">
+    <div class="faith-card reveal">
+      <span class="faith-cross">✝️</span>
+      <div class="faith-title">Faith Mode</div>
+      <p class="faith-desc">
+        Optional biblical stewardship guidance woven into your daily financial brief. Scripture-based reflections on money, discipline, generosity, and wisdom — for those who want their finances aligned with their faith.
+      </p>
+      <div class="faith-verse">
+        "The plans of the diligent lead surely to abundance, but everyone who is hasty comes only to poverty."
+        <cite>— Proverbs 21:5</cite>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Score Section -->
+<section class="score-section" id="score">
+  <div class="score-grid">
+    <div class="score-visual reveal">
+      <div class="score-number">74</div>
+      <div class="score-label">Stewardship Score · Good Standing ↑4 this month</div>
+      <div class="score-bar-row">
+        <div class="score-bar-header"><span class="score-bar-name">Saving Habits</span><span class="score-bar-val" style="color:var(--green)">80</span></div>
+        <div class="score-bar-bg"><div class="score-bar-fill" style="width:80%;background:var(--green)"></div></div>
+      </div>
+      <div class="score-bar-row">
+        <div class="score-bar-header"><span class="score-bar-name">Spending Discipline</span><span class="score-bar-val" style="color:var(--gold)">62</span></div>
+        <div class="score-bar-bg"><div class="score-bar-fill" style="width:62%;background:var(--gold)"></div></div>
+      </div>
+      <div class="score-bar-row">
+        <div class="score-bar-header"><span class="score-bar-name">Debt Management</span><span class="score-bar-val" style="color:var(--blue)">75</span></div>
+        <div class="score-bar-bg"><div class="score-bar-fill" style="width:75%;background:var(--blue)"></div></div>
+      </div>
+      <div class="score-bar-row">
+        <div class="score-bar-header"><span class="score-bar-name">Investment Growth</span><span class="score-bar-val" style="color:var(--accent)">78</span></div>
+        <div class="score-bar-bg"><div class="score-bar-fill" style="width:78%;background:var(--accent)"></div></div>
+      </div>
+      <div class="score-bar-row">
+        <div class="score-bar-header"><span class="score-bar-name">Giving Consistency</span><span class="score-bar-val" style="color:#8B5CF6">90</span></div>
+        <div class="score-bar-bg"><div class="score-bar-fill" style="width:90%;background:#8B5CF6"></div></div>
+      </div>
+    </div>
+    <div class="score-text reveal">
+      <h3>Your Stewardship<br><span style="color:var(--accent)">Score</span></h3>
+      <p>A holistic financial health score that goes beyond credit ratings. Measures how well you're saving, spending, investing, managing debt, and giving — updated daily.</p>
+      <div class="score-chips">
+        <div class="score-chip">Saving habits</div>
+        <div class="score-chip">Spending discipline</div>
+        <div class="score-chip">Debt management</div>
+        <div class="score-chip">Investment growth</div>
+        <div class="score-chip">Giving consistency</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section class="cta-section">
+  <div class="cta-glow"></div>
+  <div class="section-label reveal">Get early access</div>
+  <h2 class="reveal">Ready to take control<br>of your <span style="color:var(--accent)">finances?</span></h2>
+  <p class="reveal">Join the waitlist today. Free to start, no credit card required. Early members get premium features free for 3 months.</p>
+
+  <div class="waitlist-form reveal" id="waitlistForm2" style="justify-content:center;">
+    <input type="email" id="emailInput2" placeholder="Enter your email address" />
+    <button class="btn-primary" onclick="joinWaitlist2()">Get Early Access</button>
+  </div>
+  <div class="success-msg" id="successMsg2" style="justify-content:center;"></div>
+
+  <div style="margin-top:24px;" class="reveal">
+    <a href="https://financeos-gamma.vercel.app/financeos" style="color:var(--sub);font-size:13px;text-decoration:none;border-bottom:1px solid var(--border);padding-bottom:2px;">
+      Or explore the live demo first →
+    </a>
+  </div>
+</section>
+
+<!-- Footer -->
+<footer>
+  <div class="logo" style="font-size:18px;">Finance<span style="color:var(--accent)">OS</span>.</div>
+  <p>© 2026 FinanceOS. Built with purpose.</p>
+  <div class="footer-links">
+    <a href="#">Privacy</a>
+    <a href="#">Terms</a>
+    <a href="https://financeos-gamma.vercel.app/financeos">Demo</a>
+  </div>
+</footer>
+
+<script>
+  // Custom cursor
+  const cursor = document.getElementById('cursor');
+  const ring = document.getElementById('cursorRing');
+  let mx = 0, my = 0, rx = 0, ry = 0;
+  document.addEventListener('mousemove', e => {
+    mx = e.clientX; my = e.clientY;
+    cursor.style.left = mx + 'px';
+    cursor.style.top = my + 'px';
+  });
+  function animateRing() {
+    rx += (mx - rx) * 0.12;
+    ry += (my - ry) * 0.12;
+    ring.style.left = rx + 'px';
+    ring.style.top = ry + 'px';
+    requestAnimationFrame(animateRing);
+  }
+  animateRing();
+  document.querySelectorAll('a, button, input').forEach(el => {
+    el.addEventListener('mouseenter', () => {
+      cursor.style.width = '16px';
+      cursor.style.height = '16px';
+      ring.style.width = '50px';
+      ring.style.height = '50px';
+      ring.style.opacity = '0.6';
+    });
+    el.addEventListener('mouseleave', () => {
+      cursor.style.width = '10px';
+      cursor.style.height = '10px';
+      ring.style.width = '36px';
+      ring.style.height = '36px';
+      ring.style.opacity = '0.4';
+    });
+  });
+
+  // Nav scroll
+  window.addEventListener('scroll', () => {
+    document.getElementById('nav').classList.toggle('scrolled', window.scrollY > 40);
+  });
+
+  // Scroll reveal
+  const observer = new IntersectionObserver(entries => {
+    entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
+  }, { threshold: 0.1 });
+  document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+
+  // Waitlist
+  function joinWaitlist() {
+    const email = document.getElementById('emailInput').value;
+    if (!email || !email.includes('@')) {
+      document.getElementById('emailInput').style.borderColor = 'var(--rose)';
+      return;
+    }
+    document.getElementById('waitlistForm').style.display = 'none';
+    const msg = document.getElementById('successMsg');
+    msg.style.display = 'block';
+    msg.textContent = '✅ You\'re on the list, ' + email.split('@')[0] + '! We\'ll be in touch soon.';
+  }
+  function joinWaitlist2() {
+    const email = document.getElementById('emailInput2').value;
+    if (!email || !email.includes('@')) {
+      document.getElementById('emailInput2').style.borderColor = 'var(--rose)';
+      return;
+    }
+    document.getElementById('waitlistForm2').style.display = 'none';
+    const msg = document.getElementById('successMsg2');
+    msg.style.display = 'flex';
+    msg.textContent = '✅ You\'re on the list, ' + email.split('@')[0] + '! Early access coming soon.';
+  }
+
+  // Enter key for forms
+  document.getElementById('emailInput').addEventListener('keydown', e => { if (e.key === 'Enter') joinWaitlist(); });
+  document.getElementById('emailInput2').addEventListener('keydown', e => { if (e.key === 'Enter') joinWaitlist2(); });
+</script>
+</body>
+</html>
