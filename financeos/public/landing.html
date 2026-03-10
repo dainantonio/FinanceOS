@@ -5,7 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>FinanceOS — Your Financial Command Center</title>
 <link rel="preconnect" href="https://fonts.googleapis.com" />
-<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@700;800;900&family=Plus+Jakarta+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
 <style>
   :root {
     --bg: #080C16;
@@ -29,7 +30,7 @@
   body {
     background: var(--bg);
     color: var(--text);
-    font-family: 'DM Sans', sans-serif;
+    font-family: 'Plus Jakarta Sans', sans-serif;
     overflow-x: hidden;
     cursor: none;
   }
@@ -76,11 +77,11 @@
     background: rgba(8,12,22,0.85);
   }
   .logo {
-    font-family: 'Syne', sans-serif;
+    font-family: 'Barlow Condensed', sans-serif;
     font-size: 22px;
     font-weight: 800;
     color: var(--text);
-    letter-spacing: -0.03em;
+    letter-spacing: -0.04em;
   }
   .logo span { color: var(--accent); }
   .nav-links {
@@ -186,11 +187,12 @@
   @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
 
   h1 {
-    font-family: 'Syne', sans-serif;
-    font-size: clamp(42px, 7vw, 88px);
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: clamp(52px, 9vw, 110px);
+    text-transform: uppercase;
     font-weight: 800;
     line-height: 1.0;
-    letter-spacing: -0.04em;
+    letter-spacing: -0.05em;
     color: var(--text);
     max-width: 900px;
     margin-bottom: 24px;
@@ -226,7 +228,7 @@
     padding: 14px 18px;
     color: var(--text);
     font-size: 14px;
-    font-family: 'DM Sans', sans-serif;
+    font-family: 'Plus Jakarta Sans', sans-serif;
     outline: none;
     transition: border-color 0.2s;
   }
@@ -240,7 +242,7 @@
     padding: 14px 24px;
     font-size: 14px;
     font-weight: 700;
-    font-family: 'DM Sans', sans-serif;
+    font-family: 'Plus Jakarta Sans', sans-serif;
     cursor: none;
     white-space: nowrap;
     transition: opacity 0.2s, transform 0.15s;
@@ -347,9 +349,9 @@
     background: #080C16;
   }
   .ps-greeting { font-size: 10px; color: var(--sub); margin-bottom: 2px; }
-  .ps-name { font-family: 'Syne', sans-serif; font-size: 16px; font-weight: 800; color: var(--text); margin-bottom: 10px; }
+  .ps-name { font-family: 'Barlow Condensed', sans-serif; font-size: 16px; font-weight: 800; color: var(--text); margin-bottom: 10px; }
   .ps-networth-label { font-size: 8px; color: var(--sub); }
-  .ps-networth { font-family: 'Syne', sans-serif; font-size: 22px; font-weight: 800; color: var(--accent); margin-bottom: 12px; }
+  .ps-networth { font-family: 'Barlow Condensed', sans-serif; font-size: 22px; font-weight: 800; color: var(--accent); margin-bottom: 12px; }
   .ps-row { display: flex; gap: 10px; margin-bottom: 14px; }
   .ps-stat { flex: 1; }
   .ps-stat-label { font-size: 7px; color: var(--sub); }
@@ -385,10 +387,10 @@
     text-align: center;
   }
   .section-title {
-    font-family: 'Syne', sans-serif;
+    font-family: 'Barlow Condensed', sans-serif;
     font-size: clamp(28px, 4vw, 48px);
     font-weight: 800;
-    letter-spacing: -0.03em;
+    letter-spacing: -0.04em;
     color: var(--text);
     text-align: center;
     margin-bottom: 16px;
@@ -445,7 +447,7 @@
     display: block;
   }
   .feature-title {
-    font-family: 'Syne', sans-serif;
+    font-family: 'Barlow Condensed', sans-serif;
     font-size: 18px;
     font-weight: 700;
     color: var(--text);
@@ -496,7 +498,7 @@
     display: block;
   }
   .faith-title {
-    font-family: 'Syne', sans-serif;
+    font-family: 'Barlow Condensed', sans-serif;
     font-size: 28px;
     font-weight: 800;
     color: var(--gold);
@@ -551,12 +553,12 @@
     box-shadow: 0 20px 60px rgba(0,0,0,0.4);
   }
   .score-number {
-    font-family: 'Syne', sans-serif;
+    font-family: 'Barlow Condensed', sans-serif;
     font-size: 80px;
     font-weight: 800;
     color: var(--accent);
     line-height: 1;
-    letter-spacing: -0.04em;
+    letter-spacing: -0.05em;
     margin-bottom: 4px;
   }
   .score-label { font-size: 13px; color: var(--sub); margin-bottom: 24px; }
@@ -567,10 +569,10 @@
   .score-bar-bg { height: 5px; background: var(--border); border-radius: 99px; overflow: hidden; }
   .score-bar-fill { height: 100%; border-radius: 99px; transition: width 1s ease; }
   .score-text h3 {
-    font-family: 'Syne', sans-serif;
+    font-family: 'Barlow Condensed', sans-serif;
     font-size: 32px;
     font-weight: 800;
-    letter-spacing: -0.03em;
+    letter-spacing: -0.04em;
     margin-bottom: 16px;
     line-height: 1.2;
   }
@@ -607,10 +609,10 @@
     pointer-events: none;
   }
   .cta-section h2 {
-    font-family: 'Syne', sans-serif;
+    font-family: 'Barlow Condensed', sans-serif;
     font-size: clamp(32px, 5vw, 56px);
     font-weight: 800;
-    letter-spacing: -0.03em;
+    letter-spacing: -0.04em;
     margin-bottom: 16px;
     line-height: 1.1;
   }
