@@ -17,7 +17,7 @@ ${rows.map((r, i) => `${i}. Date: ${r.date}, Description: ${r.desc}, Amount: ${r
 
 Rules:
 - If amount is positive in the CSV it may be a credit/income - use "Income" category
-- If amount is negative it's a debit/expense
+- If amount is negative it is a debit/expense
 - Always return amount as positive number
 - Return ONLY a valid JSON array, no markdown, no explanation
 `;
@@ -42,23 +42,30 @@ function parseCSV(text) {
 
 function StatusBadge({ status }) {
   const map = {
-    idle:       { color: C.sub,    label: "Ready to import" },
-    parsing:    { color: C.gold,   label: "Reading CSV..." },
-    categorizing:{ color: C.blue,  label: "AI categorizing..." },
-    saving:     { color: C.accent, label: "Saving to database..." },
-    done:       { color: C.green,  label: "Import complete ✅" },
-    error:      { color: C.rose,   label: "Something went wrong" },
+    idle:        { color: C.sub,    label: "Ready to import" },
+    parsing:     { color: C.gold,   label: "Reading CSV..." },
+    categorizing:{ color: C.blue,   label: "AI categorizing..." },
+    saving:      { color: C.accent, label: "Saving to database..." },
+    done:        { color: C.green,  label: "Import complete!" },
+    error:       { color: C.rose,   label: "Something went wrong" },
   };
   const s = map[status] || map.idle;
   return (
     <div style={{ display:"flex", alignItems:"center", gap:8 }}>
       <div style={{ width:8, height:8, borderRadius:"50%", background:s.color,
-        boxShadow:`0 0 8px ${s.color}`, animation: ["parsing","categorizing","saving"].includes(status) ? "pulse 1s ease-in-out infinite" : "none" }} />
+        boxShadow:`0 0 8px ${s.color}`,
+        animation: ["parsing","categorizing","saving"].includes(status) ? "pulse 1s ease-in-out infinite" : "none" }} />
       <span style={{ fontSize:13, color:s.color, fontWeight:600 }}>{s.label}</span>
       <style>{`@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }`}</style>
     </div>
   );
 }
+
+const CATEGORY_COLORS = {
+  Food:"#F59E0B", Transport:"#3B82F6", Shopping:"#8B5CF6",
+  Bills:"#F43F5E", Entertainment:"#EC4899", Health:"#10B981",
+  Travel:"#06B6D4", Income:"#00E5C3", Giving:"#A78BFA", Other:"#6B7280",
+};
 
 export default function ImportScreen({ userId, onImportDone }) {
   const [status,   setStatus]   = useState("idle");
@@ -66,11 +73,13 @@ export default function ImportScreen({ userId, onImportDone }) {
   const [error,    setError]    = useState("");
   const [imported, setImported] = useState(0);
   const [skipped,  setSkipped]  = useState(0);
+  const [dragging, setDragging] = useState(false);
   const fileRef = useRef();
 
-  async function handleFile(e) {
-    const file = e.target.files[0];
-    if (!file) return;
+  async function processFile(file) {
+    if (!file || !file.name.endsWith(".csv")) {
+      setError("Please upload a .csv file"); setStatus("error"); return;
+    }
     setError(""); setPreview([]); setImported(0); setSkipped(0);
 
     try {
@@ -80,8 +89,6 @@ export default function ImportScreen({ userId, onImportDone }) {
       if (rows.length === 0) throw new Error("No transactions found in CSV");
 
       setStatus("categorizing");
-
-      // Batch into groups of 50 to avoid token limits
       const BATCH = 50;
       const categorized = [];
       for (let i = 0; i < rows.length; i += BATCH) {
@@ -96,19 +103,30 @@ export default function ImportScreen({ userId, onImportDone }) {
           }),
         });
         const data = await res.json();
-        const text2 = data.content?.[0]?.text || "[]";
-        const clean = text2.replace(/```json|```/g, "").trim();
+        const txt  = data.content?.[0]?.text || "[]";
+        const clean = txt.replace(/```json|```/g, "").trim();
         const parsed = JSON.parse(clean);
         categorized.push(...parsed);
       }
-
       setPreview(categorized);
       setStatus("idle");
     } catch (err) {
       setError(err.message);
       setStatus("error");
     }
+  }
+
+  function handleFile(e) {
+    const file = e.target.files[0];
+    if (file) processFile(file);
     e.target.value = "";
+  }
+
+  function handleDrop(e) {
+    e.preventDefault();
+    setDragging(false);
+    const file = e.dataTransfer.files[0];
+    if (file) processFile(file);
   }
 
   async function confirmImport() {
@@ -119,7 +137,7 @@ export default function ImportScreen({ userId, onImportDone }) {
         user_id:  userId,
         amount:   Math.abs(parseFloat(tx.amount) || 0),
         category: tx.category || "Other",
-        note:     tx.note || tx.desc || "",
+        note:     tx.note || "",
         date:     tx.date || new Date().toISOString().split("T")[0],
       });
       if (err) skip++; else saved++;
@@ -130,51 +148,54 @@ export default function ImportScreen({ userId, onImportDone }) {
     if (onImportDone) onImportDone();
   }
 
-  const CATEGORY_COLORS = {
-    Food:"#F59E0B", Transport:"#3B82F6", Shopping:"#8B5CF6",
-    Bills:"#F43F5E", Entertainment:"#EC4899", Health:"#10B981",
-    Travel:"#06B6D4", Income:"#00E5C3", Giving:"#A78BFA", Other:"#6B7280",
-  };
-
   return (
     <div>
       {/* Header */}
       <Card>
         <SectionTitle>Import Transactions</SectionTitle>
         <div style={{ fontSize:13, color:C.sub, lineHeight:1.7, marginBottom:16 }}>
-          Download your bank statement as a CSV and upload it here. AI will automatically
-          clean merchant names and categorize every transaction.
+          Upload your Chase CSV and AI will clean merchant names and categorize every transaction automatically.
         </div>
-        <div style={{ background:C.surface, borderRadius:12, padding:"14px",
-          border:`1px solid ${C.border}`, marginBottom:14, fontSize:12, color:C.sub, lineHeight:1.8 }}>
-          <div style={{ fontWeight:700, color:C.text, marginBottom:6 }}>Chase CSV format:</div>
+        <div style={{ background:C.surface, borderRadius:12, padding:"12px 14px",
+          border:`1px solid ${C.border}`, marginBottom:14, fontSize:12, color:C.sub }}>
+          <span style={{ fontWeight:700, color:C.text }}>Chase format: </span>
           <code style={{ color:C.accent }}>Date, Description, Amount, Balance</code>
-          <div style={{ marginTop:6 }}>✅ Works with Chase, most US banks</div>
         </div>
         <StatusBadge status={status} />
       </Card>
 
-      {/* Upload */}
+      {/* Drop Zone */}
       {status !== "done" && (
         <Card>
-          <input ref={fileRef} type="file" accept=".csv" onChange={handleFile}
-            style={{ display:"none" }} />
-          <button onClick={() => fileRef.current?.click()}
-            disabled={["parsing","categorizing","saving"].includes(status)}
-            style={{ width:"100%", background: C.accent+"20",
-              border:`2px dashed ${C.accent}60`, borderRadius:14, padding:"28px 20px",
-              cursor:"pointer", fontFamily:"inherit", transition:"all .2s" }}
-            onMouseEnter={e => e.currentTarget.style.background = C.accent+"30"}
-            onMouseLeave={e => e.currentTarget.style.background = C.accent+"20"}>
-            <div style={{ fontSize:32, marginBottom:10 }}>📂</div>
-            <div style={{ fontSize:14, fontWeight:700, color:C.accent, marginBottom:4 }}>
-              {["parsing","categorizing","saving"].includes(status) ? "Processing..." : "Tap to upload CSV"}
+          <input ref={fileRef} type="file" accept=".csv" onChange={handleFile} style={{ display:"none" }} />
+          <div
+            onDragOver={e => { e.preventDefault(); setDragging(true); }}
+            onDragEnter={e => { e.preventDefault(); setDragging(true); }}
+            onDragLeave={() => setDragging(false)}
+            onDrop={handleDrop}
+            onClick={() => !["parsing","categorizing","saving"].includes(status) && fileRef.current?.click()}
+            style={{
+              width:"100%", borderRadius:14, padding:"32px 20px", textAlign:"center",
+              background: dragging ? C.accent+"28" : C.accent+"18",
+              border:`2px dashed ${dragging ? C.accent : C.accent+"55"}`,
+              cursor: ["parsing","categorizing","saving"].includes(status) ? "default" : "pointer",
+              transition:"all .2s",
+              transform: dragging ? "scale(1.02)" : "scale(1)",
+            }}>
+            <div style={{ fontSize:36, marginBottom:10 }}>
+              {["parsing","categorizing","saving"].includes(status) ? "⏳" : dragging ? "⬇️" : "📂"}
+            </div>
+            <div style={{ fontSize:15, fontWeight:700, color:C.accent, marginBottom:6 }}>
+              {["parsing","categorizing","saving"].includes(status) ? "Processing..." :
+               dragging ? "Drop it here!" : "Tap or drag & drop your CSV"}
             </div>
             <div style={{ fontSize:12, color:C.sub }}>Chase bank statement (.csv)</div>
-          </button>
+          </div>
+
           {error && (
-            <div style={{ marginTop:12, background:"rgba(244,63,94,0.1)", border:"1px solid rgba(244,63,94,0.3)",
-              borderRadius:10, padding:"10px 14px", fontSize:13, color:C.rose }}>
+            <div style={{ marginTop:12, background:"rgba(244,63,94,0.1)",
+              border:"1px solid rgba(244,63,94,0.3)", borderRadius:10,
+              padding:"10px 14px", fontSize:13, color:C.rose }}>
               ⚠️ {error}
             </div>
           )}
@@ -189,7 +210,7 @@ export default function ImportScreen({ userId, onImportDone }) {
             <div style={{ fontSize:11, color:C.sub }}>Review before saving</div>
           </div>
 
-          {/* Category summary */}
+          {/* Category pills */}
           <div style={{ display:"flex", flexWrap:"wrap", gap:8, marginBottom:16 }}>
             {Object.entries(
               preview.reduce((acc, t) => { acc[t.category] = (acc[t.category]||0)+1; return acc; }, {})
@@ -203,12 +224,11 @@ export default function ImportScreen({ userId, onImportDone }) {
             ))}
           </div>
 
-          {/* Transaction list preview */}
+          {/* Transaction list */}
           <div style={{ maxHeight:280, overflowY:"auto", marginBottom:16 }}>
             {preview.map((tx, i) => (
               <div key={i} style={{ display:"flex", justifyContent:"space-between",
-                alignItems:"center", padding:"10px 0",
-                borderBottom:`1px solid ${C.border}` }}>
+                alignItems:"center", padding:"10px 0", borderBottom:`1px solid ${C.border}` }}>
                 <div style={{ flex:1, minWidth:0 }}>
                   <div style={{ fontSize:13, fontWeight:600, color:C.text,
                     overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>
@@ -217,12 +237,14 @@ export default function ImportScreen({ userId, onImportDone }) {
                   <div style={{ display:"flex", gap:8, marginTop:3, alignItems:"center" }}>
                     <span style={{ fontSize:10, color:C.muted }}>{tx.date}</span>
                     <span style={{ fontSize:10, background:(CATEGORY_COLORS[tx.category]||C.sub)+"20",
-                      color:CATEGORY_COLORS[tx.category]||C.sub, padding:"1px 6px",
-                      borderRadius:99, fontWeight:600 }}>{tx.category}</span>
+                      color:CATEGORY_COLORS[tx.category]||C.sub,
+                      padding:"1px 6px", borderRadius:99, fontWeight:600 }}>
+                      {tx.category}
+                    </span>
                   </div>
                 </div>
-                <div style={{ fontSize:14, fontWeight:700,
-                  color: tx.category === "Income" ? C.green : C.text, marginLeft:12 }}>
+                <div style={{ fontSize:14, fontWeight:700, marginLeft:12,
+                  color: tx.category === "Income" ? C.green : C.text }}>
                   {tx.category === "Income" ? "+" : "-"}{fmt(Math.abs(tx.amount))}
                 </div>
               </div>
@@ -249,9 +271,7 @@ export default function ImportScreen({ userId, onImportDone }) {
         <Card glow={C.green}>
           <div style={{ textAlign:"center", padding:"16px 0" }}>
             <div style={{ fontSize:40, marginBottom:12 }}>🎉</div>
-            <div style={{ fontSize:18, fontWeight:800, color:C.green, marginBottom:6 }}>
-              Import Complete!
-            </div>
+            <div style={{ fontSize:18, fontWeight:800, color:C.green, marginBottom:6 }}>Import Complete!</div>
             <div style={{ fontSize:13, color:C.sub, marginBottom:20 }}>
               <span style={{ color:C.text, fontWeight:700 }}>{imported}</span> transactions saved
               {skipped > 0 && <span> · <span style={{ color:C.rose }}>{skipped} skipped</span></span>}
@@ -266,7 +286,7 @@ export default function ImportScreen({ userId, onImportDone }) {
         </Card>
       )}
 
-      {/* Tips */}
+      {/* How to export */}
       <Card>
         <SectionTitle>How to export from Chase</SectionTitle>
         {[
@@ -274,7 +294,7 @@ export default function ImportScreen({ userId, onImportDone }) {
           ["2", "Go to your checking or credit card account"],
           ["3", "Click 'Download account activity'"],
           ["4", "Select date range → choose CSV format"],
-          ["5", "Upload the file here"],
+          ["5", "Upload or drag the file above"],
         ].map(([n, tip]) => (
           <div key={n} style={{ display:"flex", gap:12, padding:"8px 0",
             borderBottom:`1px solid ${C.border}` }}>
