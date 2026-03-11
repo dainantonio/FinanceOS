@@ -12,7 +12,6 @@ import InvestmentsScreen from "./screens/InvestmentsScreen";
 import GivingScreen      from "./screens/GivingScreen";
 import AICoachScreen     from "./screens/AICoachScreen";
 import SettingsScreen    from "./screens/SettingsScreen";
-import WealthSimulatorScreen from './screens/WealthSimulatorScreen';
 import SubsScreen        from "./screens/SubsScreen";
 
 const TITLES = {
@@ -133,8 +132,21 @@ export default function App() {
 
       <style>{`
         * { box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
-        body { margin:0; background:${C.bg}; }
+        body { margin:0; background:${C.bg}; font-family:'DM Sans',system-ui,sans-serif; }
         ::-webkit-scrollbar { width:0; }
+        input,button,select,textarea { font-family:inherit; }
+        button:active { transform:scale(0.97) !important; transition:transform .08s !important; }
+        @keyframes fadeSlideUp {
+          from { opacity:0; transform:translateY(12px); }
+          to   { opacity:1; transform:translateY(0); }
+        }
+        @keyframes shimmer {
+          0%   { background-position:200% 0; }
+          100% { background-position:-200% 0; }
+        }
+        .screen-enter {
+          animation: fadeSlideUp 0.25s ease both;
+        }
       `}</style>
     </div>
   );

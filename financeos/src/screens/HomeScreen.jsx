@@ -3,6 +3,7 @@ import { fmt } from "../constants/helpers";
 import { useGoals, useSpending, useGiving } from "../hooks/useSupabase";
 import { SCRIPTURES, AI_INSIGHTS } from "../data/mockData";
 import Card from "../components/Card";
+import { SkeletonCard } from "../components/Skeleton";
 import SectionTitle from "../components/SectionTitle";
 import ProgressBar from "../components/ProgressBar";
 import ScoreRing from "../components/ScoreRing";
@@ -24,6 +25,7 @@ export default function HomeScreen({ profile }) {
   const { totalThisMonth: totalSpending }  = useSpending(userId);
   const { totalThisMonth: totalGiving }    = useGiving(userId);
 
+  const isLoading = !profile?.full_name;
   const scripture  = SCRIPTURES[new Date().getDay() % SCRIPTURES.length];
   const name       = profile?.full_name || "Friend";
   const netWorth   = profile?.net_worth   || 0;
@@ -43,6 +45,10 @@ export default function HomeScreen({ profile }) {
     10
   );
   const clampedScore = Math.max(Math.min(score, 99), 10);
+
+  if (isLoading) return (
+    <div><SkeletonCard /><SkeletonCard /><SkeletonCard /></div>
+  );
 
   return (
     <div>

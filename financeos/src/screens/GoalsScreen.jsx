@@ -3,6 +3,7 @@ import { C } from "../constants/colors";
 import { fmt } from "../constants/helpers";
 import { useGoals } from "../hooks/useSupabase";
 import Card from "../components/Card";
+import { SkeletonCard } from "../components/Skeleton";
 import SectionTitle from "../components/SectionTitle";
 import ProgressBar from "../components/ProgressBar";
 
@@ -85,7 +86,7 @@ export default function GoalsScreen({ userId }) {
       {/* Goals List */}
       <Card>
         <SectionTitle>Active Goals</SectionTitle>
-        {loading && <div style={{ fontSize:13, color:C.sub, textAlign:"center", padding:"20px 0" }}>Loading...</div>}
+        {loading && <><SkeletonCard /><SkeletonCard /></>}
         {!loading && goals.length === 0 && (
           <div style={{ fontSize:13, color:C.sub, textAlign:"center", padding:"20px 0" }}>
             No goals yet. Tap "+ Add Goal" to create your first one!

@@ -3,6 +3,7 @@ import { C } from "../constants/colors";
 import { fmt } from "../constants/helpers";
 import { useGiving } from "../hooks/useSupabase";
 import Card from "../components/Card";
+import { SkeletonRow } from "../components/Skeleton";
 import SectionTitle from "../components/SectionTitle";
 import ProgressBar from "../components/ProgressBar";
 
@@ -123,10 +124,12 @@ export default function GivingScreen({ userId }) {
       {/* Giving Log */}
       <Card>
         <SectionTitle>Giving Log</SectionTitle>
-        {loading && <div style={{ fontSize:13, color:C.sub, textAlign:"center", padding:"20px 0" }}>Loading...</div>}
+        {loading && <><SkeletonRow /><SkeletonRow /><SkeletonRow /></>}
         {!loading && giving.length === 0 && (
-          <div style={{ fontSize:13, color:C.sub, textAlign:"center", padding:"20px 0" }}>
-            No giving logged yet. Tap "+ Log Gift" to record your first one!
+          <div style={{ textAlign:"center", padding:"32px 0" }}>
+            <div style={{ fontSize:36, marginBottom:12 }}>🤲</div>
+            <div style={{ fontSize:15, fontWeight:700, color:C.text, marginBottom:6 }}>No giving logged yet</div>
+            <div style={{ fontSize:13, color:C.sub }}>Tap "+ Log Gift" to record your generosity</div>
           </div>
         )}
         {giving.slice(0, 20).map(g => {

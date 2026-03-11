@@ -3,6 +3,7 @@ import { C } from "../constants/colors";
 import { fmt } from "../constants/helpers";
 import { useSpending } from "../hooks/useSupabase";
 import Card from "../components/Card";
+import { SkeletonCard, SkeletonRow } from "../components/Skeleton";
 import SectionTitle from "../components/SectionTitle";
 import ProgressBar from "../components/ProgressBar";
 
@@ -127,7 +128,7 @@ export default function SpendingScreen({ userId }) {
 
       <Card>
         <SectionTitle>Recent Transactions</SectionTitle>
-        {loading && <div style={{ fontSize:13, color:C.sub, textAlign:"center", padding:"20px 0" }}>Loading...</div>}
+        {loading && <><SkeletonRow /><SkeletonRow /><SkeletonRow /></>}
         {!loading && spending.length === 0 && (
           <div style={{ fontSize:13, color:C.sub, textAlign:"center", padding:"20px 0" }}>
             No expenses yet. Tap "+ Add Expense" to get started!
