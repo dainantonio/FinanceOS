@@ -12,6 +12,7 @@ import InvestmentsScreen from "./screens/InvestmentsScreen";
 import GivingScreen      from "./screens/GivingScreen";
 import AICoachScreen     from "./screens/AICoachScreen";
 import SettingsScreen    from "./screens/SettingsScreen";
+import WealthSimulatorScreen from './screens/WealthSimulatorScreen';
 import SubsScreen        from "./screens/SubsScreen";
 
 const TITLES = {
