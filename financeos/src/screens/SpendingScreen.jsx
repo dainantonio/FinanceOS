@@ -127,7 +127,7 @@ export default function SpendingScreen({ userId, onImport }) {
       )}
 
       <Card>
-        <SectionTitle>Recent Transactions</SectionTitle>
+        <SectionTitle action="Import CSV" onAction={onImport}>Recent Transactions</SectionTitle>
         {loading && <><SkeletonRow /><SkeletonRow /><SkeletonRow /></>}
         {!loading && spending.length === 0 && (
           <div style={{ fontSize:13, color:C.sub, textAlign:"center", padding:"20px 0" }}>
