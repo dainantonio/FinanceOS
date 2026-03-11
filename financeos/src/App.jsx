@@ -90,6 +90,7 @@ export default function App() {
     coach:    <AICoachScreen profile={profile} />,
     settings: <SettingsScreen profile={profile} updateProfile={updateProfile} faithMode={faithMode} setFaithMode={handleFaithToggle} onSignOut={handleSignOut} />,
     subs:     <SubsScreen />,
+    wealth:   <WealthSimulatorScreen profile={profile} />,
   };
 
   return (
