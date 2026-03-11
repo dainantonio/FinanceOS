@@ -3,26 +3,27 @@ import { supabase } from "./lib/supabase";
 import { useProfile, useGoals } from "./hooks/useSupabase";
 import { C } from "./constants/colors";
 import BottomNav from "./components/BottomNav";
-import AuthScreen        from "./screens/AuthScreen";
-import OnboardingScreen  from "./screens/OnboardingScreen";
-import HomeScreen        from "./screens/HomeScreen";
-import SpendingScreen    from "./screens/SpendingScreen";
-import GoalsScreen       from "./screens/GoalsScreen";
-import InvestmentsScreen from "./screens/InvestmentsScreen";
-import GivingScreen      from "./screens/GivingScreen";
-import AICoachScreen     from "./screens/AICoachScreen";
-import SettingsScreen    from "./screens/SettingsScreen";
-import SubsScreen        from "./screens/SubsScreen";
+import AuthScreen            from "./screens/AuthScreen";
+import OnboardingScreen      from "./screens/OnboardingScreen";
+import HomeScreen            from "./screens/HomeScreen";
+import SpendingScreen        from "./screens/SpendingScreen";
+import GoalsScreen           from "./screens/GoalsScreen";
+import GivingScreen          from "./screens/GivingScreen";
+import AICoachScreen         from "./screens/AICoachScreen";
+import SettingsScreen        from "./screens/SettingsScreen";
+import WealthSimulatorScreen from "./screens/WealthSimulatorScreen";
+import ImportScreen          from "./screens/ImportScreen";
 
 const TITLES = {
-  home:"FinanceOS",spending:"Spending",goals:"Goals",
-  invest:"Investments",giving:"Giving",coach:"AI Coach",
-  settings:"Settings",subs:"Subscriptions",
+  home:"FinanceOS", spending:"Spending", goals:"Goals",
+  giving:"Giving", coach:"AI Coach", settings:"Settings",
+  wealth:"Wealth Simulator", import:"Import Transactions",
 };
 
 export default function App() {
   const [session, setSession] = useState(undefined);
   const [tab, setTab]         = useState("home");
+  const [faithMode, setFaithMode] = useState(true);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => setSession(session));
@@ -32,100 +33,65 @@ export default function App() {
 
   const userId = session?.user?.id;
   const { profile, loading: profileLoading, updateProfile } = useProfile(userId);
-  const { addGoal } = useGoals(userId);
 
-  async function handleOnboardingComplete(profileData, selectedGoals) {
-    try {
-      const { error: profileError } = await updateProfile(profileData);
-      if (profileError) {
-        console.error("Profile update error:", profileError);
-        alert("Error saving profile: " + profileError.message);
-        return;
-      }
-      for (const goal of selectedGoals) {
-        await addGoal({ name: goal.name, icon: goal.icon, target: goal.target, saved: 0 });
-      }
-    } catch (err) {
-      console.error("Onboarding error:", err);
-      alert("Something went wrong: " + err.message);
-    }
+  async function handleOnboardingComplete(profileData) {
+    const { error: profileError } = await updateProfile(profileData);
+    if (profileError) console.error(profileError);
   }
 
-  async function handleSignOut() { await supabase.auth.signOut(); }
-
-  // Loading
-  if (session === undefined || (session && profileLoading)) {
-    return (
-      <div style={{ minHeight:"100vh", background:C.bg, display:"flex",
-        alignItems:"center", justifyContent:"center" }}>
-        <div style={{ fontSize:13, color:C.sub }}>Loading...</div>
-      </div>
-    );
+  async function handleSignOut() {
+    await supabase.auth.signOut();
+    setTab("home");
   }
-
-  // Not logged in
-  if (!session) return <AuthScreen />;
-
-  // First time user — no name set yet
-  if (!profile?.full_name) {
-    return <OnboardingScreen onComplete={handleOnboardingComplete} />;
-  }
-
-  // Logged in + onboarded
-  const user = session.user;
-  const displayName = profile.full_name || user.email?.split("@")[0] || "User";
-  const initials = displayName.charAt(0).toUpperCase();
-  const faithMode = profile.faith_mode ?? true;
 
   async function handleFaithToggle(val) {
+    setFaithMode(val);
     await updateProfile({ faith_mode: val });
   }
 
+  useEffect(() => {
+    if (profile?.faith_mode !== undefined) setFaithMode(profile.faith_mode);
+  }, [profile?.faith_mode]);
+
+  if (session === undefined) return (
+    <div style={{ display:"flex", alignItems:"center", justifyContent:"center",
+      height:"100vh", background:C.bg, color:C.sub, fontSize:14 }}>
+      Loading...
+    </div>
+  );
+
+  if (!session) return <AuthScreen />;
+
+  if (session && !profile?.full_name && !profileLoading) {
+    return <OnboardingScreen userId={userId} onComplete={handleOnboardingComplete} />;
+  }
+
   const screens = {
-    home:     <HomeScreen profile={profile} />,
-    spending: <SpendingScreen userId={userId} onImport={() => setTab('import')} />,
-    goals:    <GoalsScreen userId={userId} />,
-    invest:   <InvestmentsScreen />,
-    giving:   <GivingScreen userId={userId} />,
+    home:     <HomeScreen    profile={profile} faithMode={faithMode} />,
+    spending: <SpendingScreen userId={userId} onImport={() => setTab("import")} />,
+    goals:    <GoalsScreen   userId={userId} />,
+    giving:   <GivingScreen  userId={userId} />,
     coach:    <AICoachScreen profile={profile} />,
     settings: <SettingsScreen profile={profile} updateProfile={updateProfile} faithMode={faithMode} setFaithMode={handleFaithToggle} onSignOut={handleSignOut} />,
-    subs:     <SubsScreen />,
     wealth:   <WealthSimulatorScreen profile={profile} />,
-    import:   <ImportScreen userId={userId} onImportDone={() => setTab('spending')} />,
+    import:   <ImportScreen  userId={userId} onImportDone={() => setTab("spending")} />,
   };
 
   return (
-    <div style={{ fontFamily:"'DM Sans',system-ui,sans-serif", background:C.bg, color:C.text,
-      minHeight:"100vh", maxWidth:420, margin:"0 auto", display:"flex",
-      flexDirection:"column", position:"relative" }}>
-
+    <div style={{ maxWidth:420, margin:"0 auto", minHeight:"100vh", background:C.bg,
+      display:"flex", flexDirection:"column", position:"relative" }}>
       {/* Header */}
-      <div style={{ position:"sticky", top:0, zIndex:100, background:C.bg+"EE",
-        backdropFilter:"blur(12px)", borderBottom:`1px solid ${C.border}`,
-        padding:"14px 20px 10px", display:"flex", justifyContent:"space-between", alignItems:"center" }}>
-        <div>
-          <div style={{ fontSize:18, fontWeight:800, color:C.text, letterSpacing:"-.02em" }}>
-            {TITLES[tab]}{tab==="home" && <span style={{ color:C.accent }}>.</span>}
-          </div>
-          {tab==="home" && (
-            <div style={{ fontSize:11, color:C.sub }}>
-              {new Date().toLocaleDateString("en-US",{ weekday:"long", month:"long", day:"numeric" })}
-            </div>
-          )}
+      <div style={{ padding:"16px 20px 8px", display:"flex", justifyContent:"space-between",
+        alignItems:"center", borderBottom:`1px solid ${C.border}` }}>
+        <div style={{ fontSize:18, fontWeight:800, color:C.text, letterSpacing:"-.02em" }}>
+          Finance<span style={{ color:C.accent }}>OS</span>
         </div>
-        <div style={{ display:"flex", gap:8, alignItems:"center" }}>
-          {faithMode && <span style={{ fontSize:16 }}>✝️</span>}
-          <div onClick={() => setTab("settings")} title={user.email}
-            style={{ width:34, height:34, borderRadius:10, background:C.accent+"20",
-              border:`1px solid ${C.accent}33`, display:"flex", alignItems:"center",
-              justifyContent:"center", fontSize:14, fontWeight:800, color:C.accent, cursor:"pointer" }}>
-            {initials}
-          </div>
-        </div>
+        <div style={{ fontSize:13, fontWeight:600, color:C.sub }}>{TITLES[tab]}</div>
       </div>
 
       {/* Screen */}
-      <div style={{ flex:1, overflowY:"auto", padding:"16px 16px 90px" }}>
+      <div key={tab} className="screen-enter"
+        style={{ flex:1, overflowY:"auto", padding:"16px 16px 90px" }}>
         {screens[tab]}
       </div>
 
@@ -145,9 +111,7 @@ export default function App() {
           0%   { background-position:200% 0; }
           100% { background-position:-200% 0; }
         }
-        .screen-enter {
-          animation: fadeSlideUp 0.25s ease both;
-        }
+        .screen-enter { animation: fadeSlideUp 0.25s ease both; }
       `}</style>
     </div>
   );
