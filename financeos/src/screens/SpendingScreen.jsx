@@ -20,7 +20,7 @@ const CATEGORIES = [
 
 const BUDGET = 5000;
 
-export default function SpendingScreen({ userId }) {
+export default function SpendingScreen({ userId, onImport }) {
   const { spending, loading, addSpending, deleteSpending, totalThisMonth } = useSpending(userId);
   const [showModal, setShowModal] = useState(false);
   const [form, setForm]           = useState({ amount:"", category:"Food & Dining", note:"", date: new Date().toISOString().split("T")[0] });

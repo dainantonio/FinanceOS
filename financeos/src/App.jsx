@@ -12,7 +12,6 @@ import InvestmentsScreen from "./screens/InvestmentsScreen";
 import GivingScreen      from "./screens/GivingScreen";
 import AICoachScreen     from "./screens/AICoachScreen";
 import SettingsScreen    from "./screens/SettingsScreen";
-import WealthSimulatorScreen from './screens/WealthSimulatorScreen';
 import SubsScreen        from "./screens/SubsScreen";
 
 const TITLES = {
@@ -84,7 +83,7 @@ export default function App() {
 
   const screens = {
     home:     <HomeScreen profile={profile} />,
-    spending: <SpendingScreen userId={userId} />,
+    spending: <SpendingScreen userId={userId} onImport={() => setTab('import')} />,
     goals:    <GoalsScreen userId={userId} />,
     invest:   <InvestmentsScreen />,
     giving:   <GivingScreen userId={userId} />,
@@ -92,6 +91,7 @@ export default function App() {
     settings: <SettingsScreen profile={profile} updateProfile={updateProfile} faithMode={faithMode} setFaithMode={handleFaithToggle} onSignOut={handleSignOut} />,
     subs:     <SubsScreen />,
     wealth:   <WealthSimulatorScreen profile={profile} />,
+    import:   <ImportScreen userId={userId} onImportDone={() => setTab('spending')} />,
   };
 
   return (
