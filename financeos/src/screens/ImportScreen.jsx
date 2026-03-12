@@ -126,20 +126,14 @@ export default function ImportScreen({ userId, onImportDone }) {
       const categorized = [];
       for (let i = 0; i < rows.length; i += BATCH) {
         const batch = rows.slice(i, i + BATCH);
-        const res = await fetch("https://api.anthropic.com/v1/messages", {
+        const res = await fetch("/api/categorize", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            model: "claude-sonnet-4-20250514",
-            max_tokens: 1000,
-            messages: [{ role: "user", content: CATEGORY_PROMPT(batch) }],
-          }),
+          body: JSON.stringify({ transactions: batch }),
         });
         const data = await res.json();
-        const txt   = data.content?.[0]?.text || "[]";
-        const clean = txt.replace(/```json|```/g, "").trim();
-        const parsed = JSON.parse(clean);
-        categorized.push(...parsed);
+        if (data.error) throw new Error(data.error);
+        categorized.push(...(data.transactions || []));
       }
       setPreview(categorized);
       setStatus("idle");
