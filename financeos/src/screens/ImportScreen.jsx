@@ -7,8 +7,8 @@ import { supabase } from "../lib/supabase";
 
 const CATEGORY_PROMPT = (rows) => `
 You are a financial transaction categorizer. Given these bank transactions, return a JSON array where each item has:
-- "date": the transaction date (YYYY-MM-DD format)
-- "note": cleaned merchant name (remove check numbers, card digits, location codes)
+- "date": the transaction date (YYYY-MM-DD format, convert from M/D/YYYY)
+- "note": cleaned merchant name (remove "POS DEBIT", "ACH", card digits, extra spaces, location codes)
 - "amount": absolute value as a number (always positive)
 - "category": one of: Food, Transport, Shopping, Bills, Entertainment, Health, Travel, Income, Giving, Other
 
@@ -16,28 +16,58 @@ Transactions:
 ${rows.map((r, i) => `${i}. Date: ${r.date}, Description: ${r.desc}, Amount: ${r.amount}`).join("\n")}
 
 Rules:
-- If amount is positive in the CSV it may be a credit/income - use "Income" category
-- If amount is negative it is a debit/expense
+- Clean up messy bank descriptions (e.g. "POS DEBIT  WM SUPERCENTER #1478  SOUTH POINT OH" -> "Walmart Supercenter")
+- If amount is positive it is income/credit - use "Income" category
+- If amount is negative it is an expense
 - Always return amount as positive number
 - Return ONLY a valid JSON array, no markdown, no explanation
 `;
 
-function parseCSV(text) {
+function parseChaseCSV(text) {
   const lines = text.trim().split("\n").filter(l => l.trim());
-  const headers = lines[0].split(",").map(h => h.trim().toLowerCase().replace(/"/g, ""));
-  const dateIdx = headers.findIndex(h => h.includes("date"));
-  const descIdx = headers.findIndex(h => h.includes("desc"));
-  const amtIdx  = headers.findIndex(h => h.includes("amount"));
 
-  return lines.slice(1).map(line => {
-    const cols = line.match(/(".*?"|[^,]+)(?=,|$)/g) || line.split(",");
-    const clean = cols.map(c => c?.replace(/"/g, "").trim() || "");
-    return {
-      date: clean[dateIdx] || "",
-      desc: clean[descIdx] || "",
-      amount: clean[amtIdx] || "0",
-    };
-  }).filter(r => r.date && r.desc);
+  // Find header row
+  const headerIdx = lines.findIndex(l =>
+    l.toLowerCase().includes("description") && l.toLowerCase().includes("amount")
+  );
+  if (headerIdx === -1) throw new Error("Could not find headers in CSV");
+
+  const headers = lines[headerIdx].split(",").map(h => h.trim().toLowerCase().replace(/"/g, ""));
+  const dateIdx = headers.findIndex(h => h.includes("date"));
+  const descIdx = headers.findIndex(h => h.includes("description"));
+  const amtIdx  = headers.findIndex(h => h === "amount");
+
+  if (dateIdx === -1 || descIdx === -1 || amtIdx === -1) {
+    throw new Error(`Missing columns. Found: ${headers.join(", ")}`);
+  }
+
+  const rows = [];
+  for (let i = headerIdx + 1; i < lines.length; i++) {
+    const line = lines[i].trim();
+    if (!line) continue;
+
+    // Split by comma but respect quoted fields
+    const cols = [];
+    let current = "";
+    let inQuotes = false;
+    for (const ch of line) {
+      if (ch === '"') { inQuotes = !inQuotes; }
+      else if (ch === "," && !inQuotes) { cols.push(current.trim()); current = ""; }
+      else current += ch;
+    }
+    cols.push(current.trim());
+
+    const date = cols[dateIdx]?.replace(/"/g, "").trim();
+    const desc = cols[descIdx]?.replace(/"/g, "").trim();
+    const amt  = cols[amtIdx]?.replace(/"/g, "").trim();
+
+    if (!date || !desc || !amt || isNaN(parseFloat(amt))) continue;
+
+    rows.push({ date, desc, amount: amt });
+  }
+
+  if (rows.length === 0) throw new Error("No valid transactions found in file");
+  return rows;
 }
 
 function StatusBadge({ status }) {
@@ -74,19 +104,22 @@ export default function ImportScreen({ userId, onImportDone }) {
   const [imported, setImported] = useState(0);
   const [skipped,  setSkipped]  = useState(0);
   const [dragging, setDragging] = useState(false);
+  const [rawCount, setRawCount] = useState(0);
   const fileRef = useRef();
 
   async function processFile(file) {
-    if (!file || !file.name.endsWith(".csv")) {
-      setError("Please upload a .csv file"); setStatus("error"); return;
+    if (!file) return;
+    if (!file.name.endsWith(".csv")) {
+      setError("Please upload a .csv file — in Chase, use 'Download account activity' not 'View statement'");
+      setStatus("error"); return;
     }
     setError(""); setPreview([]); setImported(0); setSkipped(0);
 
     try {
       setStatus("parsing");
       const text = await file.text();
-      const rows = parseCSV(text);
-      if (rows.length === 0) throw new Error("No transactions found in CSV");
+      const rows = parseChaseCSV(text);
+      setRawCount(rows.length);
 
       setStatus("categorizing");
       const BATCH = 50;
@@ -103,7 +136,7 @@ export default function ImportScreen({ userId, onImportDone }) {
           }),
         });
         const data = await res.json();
-        const txt  = data.content?.[0]?.text || "[]";
+        const txt   = data.content?.[0]?.text || "[]";
         const clean = txt.replace(/```json|```/g, "").trim();
         const parsed = JSON.parse(clean);
         categorized.push(...parsed);
@@ -123,8 +156,7 @@ export default function ImportScreen({ userId, onImportDone }) {
   }
 
   function handleDrop(e) {
-    e.preventDefault();
-    setDragging(false);
+    e.preventDefault(); setDragging(false);
     const file = e.dataTransfer.files[0];
     if (file) processFile(file);
   }
@@ -158,8 +190,8 @@ export default function ImportScreen({ userId, onImportDone }) {
         </div>
         <div style={{ background:C.surface, borderRadius:12, padding:"12px 14px",
           border:`1px solid ${C.border}`, marginBottom:14, fontSize:12, color:C.sub }}>
-          <span style={{ fontWeight:700, color:C.text }}>Chase format: </span>
-          <code style={{ color:C.accent }}>Date, Description, Amount, Balance</code>
+          <div style={{ fontWeight:700, color:C.text, marginBottom:4 }}>Chase format detected:</div>
+          <code style={{ color:C.accent, fontSize:11 }}>Details, Posting Date, Description, Amount, Type...</code>
         </div>
         <StatusBadge status={status} />
       </Card>
@@ -186,16 +218,17 @@ export default function ImportScreen({ userId, onImportDone }) {
               {["parsing","categorizing","saving"].includes(status) ? "⏳" : dragging ? "⬇️" : "📂"}
             </div>
             <div style={{ fontSize:15, fontWeight:700, color:C.accent, marginBottom:6 }}>
-              {["parsing","categorizing","saving"].includes(status) ? "Processing..." :
-               dragging ? "Drop it here!" : "Tap or drag & drop your CSV"}
+              {["parsing","categorizing","saving"].includes(status)
+                ? `Processing ${rawCount} transactions...`
+                : dragging ? "Drop it here!" : "Tap or drag & drop your CSV"}
             </div>
-            <div style={{ fontSize:12, color:C.sub }}>Chase bank statement (.csv)</div>
+            <div style={{ fontSize:12, color:C.sub }}>Chase account activity (.csv)</div>
           </div>
 
           {error && (
             <div style={{ marginTop:12, background:"rgba(244,63,94,0.1)",
               border:"1px solid rgba(244,63,94,0.3)", borderRadius:10,
-              padding:"10px 14px", fontSize:13, color:C.rose }}>
+              padding:"12px 14px", fontSize:13, color:C.rose, lineHeight:1.6 }}>
               ⚠️ {error}
             </div>
           )}
@@ -210,7 +243,6 @@ export default function ImportScreen({ userId, onImportDone }) {
             <div style={{ fontSize:11, color:C.sub }}>Review before saving</div>
           </div>
 
-          {/* Category pills */}
           <div style={{ display:"flex", flexWrap:"wrap", gap:8, marginBottom:16 }}>
             {Object.entries(
               preview.reduce((acc, t) => { acc[t.category] = (acc[t.category]||0)+1; return acc; }, {})
@@ -224,7 +256,6 @@ export default function ImportScreen({ userId, onImportDone }) {
             ))}
           </div>
 
-          {/* Transaction list */}
           <div style={{ maxHeight:280, overflowY:"auto", marginBottom:16 }}>
             {preview.map((tx, i) => (
               <div key={i} style={{ display:"flex", justifyContent:"space-between",
@@ -290,11 +321,12 @@ export default function ImportScreen({ userId, onImportDone }) {
       <Card>
         <SectionTitle>How to export from Chase</SectionTitle>
         {[
-          ["1", "Log in at chase.com"],
-          ["2", "Go to your checking or credit card account"],
-          ["3", "Click 'Download account activity'"],
-          ["4", "Select date range → choose CSV format"],
-          ["5", "Upload or drag the file above"],
+          ["1", "Log into chase.com on desktop"],
+          ["2", "Click your checking or credit card account"],
+          ["3", "Click 'Download account activity' (not View Statement)"],
+          ["4", "Set your date range"],
+          ["5", "Make sure format is CSV → Download"],
+          ["6", "Upload or drag the file above"],
         ].map(([n, tip]) => (
           <div key={n} style={{ display:"flex", gap:12, padding:"8px 0",
             borderBottom:`1px solid ${C.border}` }}>
