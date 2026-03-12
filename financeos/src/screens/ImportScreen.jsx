@@ -109,7 +109,7 @@ export default function ImportScreen({ userId, onImportDone }) {
 
   async function processFile(file) {
     if (!file) return;
-    if (!file.name.endsWith(".csv")) {
+    if (!file.name.toLowerCase().includes("csv") && !file.type.includes("csv") && !file.type.includes("excel")) {
       setError("Please upload a .csv file — in Chase, use 'Download account activity' not 'View statement'");
       setStatus("error"); return;
     }
@@ -199,7 +199,7 @@ export default function ImportScreen({ userId, onImportDone }) {
       {/* Drop Zone */}
       {status !== "done" && (
         <Card>
-          <input ref={fileRef} type="file" accept=".csv" onChange={handleFile} style={{ display:"none" }} />
+          <input ref={fileRef} type="file" accept=".csv,.CSV" onChange={handleFile} style={{ display:"none" }} />
           <div
             onDragOver={e => { e.preventDefault(); setDragging(true); }}
             onDragEnter={e => { e.preventDefault(); setDragging(true); }}
